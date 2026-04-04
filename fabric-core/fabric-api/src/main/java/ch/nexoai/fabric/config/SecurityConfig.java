@@ -1,5 +1,6 @@
 package ch.nexoai.fabric.config;
 
+import ch.nexoai.fabric.core.tenant.ApiKeyAuthFilter;
 import ch.nexoai.fabric.core.tenant.JwtAuthFilter;
 import ch.nexoai.fabric.core.tenant.TenantInterceptor;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class SecurityConfig implements WebMvcConfigurer {
 
     private final TenantInterceptor tenantInterceptor;
     private final JwtAuthFilter jwtAuthFilter;
+    private final ApiKeyAuthFilter apiKeyAuthFilter;
 
     @Value("${nexo.security.auth-enforced:false}")
     private boolean authEnforced;
@@ -58,6 +60,7 @@ public class SecurityConfig implements WebMvcConfigurer {
         }
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(apiKeyAuthFilter, JwtAuthFilter.class);
 
         return http.build();
     }

@@ -194,19 +194,66 @@ public class AgentSessionService {
         return history;
     }
 
+    private static final int MAX_TOOL_ROUNDS = 5;
+
     /**
-     * Try to use the LLM provider if available, otherwise fall back to keyword routing.
+     * Try to use the LLM provider with tool-calling if available,
+     * otherwise fall back to keyword routing.
      */
     private String processMessageWithLlm(String userMessage, List<Map<String, Object>> toolCalls,
                                           List<LlmMessage> conversationHistory) {
-        if (llmProvider != null && llmProvider.isAvailable()) {
+        if (llmProvider == null || !llmProvider.isAvailable()) {
+            return processMessage(userMessage, toolCalls);
+        }
+
+        try {
             List<LlmMessage> messages = new ArrayList<>(conversationHistory);
             messages.add(LlmMessage.user(userMessage));
+            var toolDefs = agentTools.getToolDefinitions();
 
-            LlmResponse response = llmProvider.chat(SYSTEM_PROMPT, messages);
-            if (response != null && response.content() != null && !response.content().isBlank()) {
-                return response.content();
+            // Tool-calling loop: LLM can call tools, we execute, send results back
+            for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
+                LlmResponse response = llmProvider.chatWithTools(SYSTEM_PROMPT, messages, toolDefs);
+
+                if (response == null) {
+                    break; // Fall back to keyword routing
+                }
+
+                // If no tool calls, return the text response
+                if (!response.hasToolCalls()) {
+                    if (response.content() != null && !response.content().isBlank()) {
+                        return response.content();
+                    }
+                    break;
+                }
+
+                // Add assistant message with tool calls to conversation
+                messages.add(LlmMessage.assistant(response.content() != null ? response.content() : ""));
+
+                // Execute each tool call and add results
+                for (var tc : response.toolCalls()) {
+                    long start = System.currentTimeMillis();
+                    Map<String, Object> result;
+                    try {
+                        result = agentTools.executeTool(tc.name(), tc.arguments());
+                    } catch (Exception e) {
+                        result = Map.of("error", e.getMessage());
+                    }
+                    long duration = System.currentTimeMillis() - start;
+
+                    String resultJson = toJson(result);
+                    messages.add(LlmMessage.toolResult(tc.id(), tc.name(), resultJson));
+
+                    toolCalls.add(Map.of(
+                            "tool", tc.name(),
+                            "input", tc.arguments(),
+                            "resultSummary", resultJson.substring(0, Math.min(resultJson.length(), 200)),
+                            "duration", duration
+                    ));
+                }
             }
+        } catch (Exception e) {
+            log.warn("LLM tool-calling failed, falling back to keyword routing: {}", e.getMessage());
         }
 
         // Fall back to keyword routing

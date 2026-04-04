@@ -29,10 +29,18 @@ services:
       DB_USERNAME: ${POSTGRES_USER:-nexo}
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      AUTH_ENFORCED: ${AUTH_ENFORCED:-true}
       N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-changeme}
       REDIS_HOST: redis
       SERVER_PORT: 8081
       CDC_ENABLED: ${CDC_ENABLED:-false}
+      NEXO_LLM_PROVIDER: ${NEXO_LLM_PROVIDER:-none}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-5-20251001}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
     depends_on:
       postgres:
         condition: service_healthy

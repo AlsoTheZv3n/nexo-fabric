@@ -2,6 +2,7 @@ package ch.nexoai.fabric.core.agent;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import ch.nexoai.fabric.adapters.out.persistence.repository.JpaObjectTypeRepository;
+import ch.nexoai.fabric.core.agent.llm.LlmToolDefinition;
 import ch.nexoai.fabric.core.ml.SemanticSearchService;
 import ch.nexoai.fabric.core.service.object.OntologyObjectService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,63 @@ public class OntologyAgentTools {
     private final OntologyObjectService objectService;
     private final SemanticSearchService semanticSearchService;
     private final JpaObjectTypeRepository objectTypeRepository;
+
+    /**
+     * Returns tool definitions for LLM function-calling.
+     */
+    public List<LlmToolDefinition> getToolDefinitions() {
+        return List.of(
+                new LlmToolDefinition("getOntologySchema",
+                        "Get all object types in the ontology with their properties. Use this to understand what data exists.",
+                        Map.of("type", "object", "properties", Map.of())),
+                new LlmToolDefinition("searchObjects",
+                        "Search for objects of a given type. Supports semantic/similarity search.",
+                        Map.of("type", "object",
+                                "properties", Map.of(
+                                        "objectType", Map.of("type", "string", "description", "The API name of the object type to search"),
+                                        "query", Map.of("type", "string", "description", "Search query text"),
+                                        "limit", Map.of("type", "integer", "description", "Max results to return (default 10)")
+                                ), "required", List.of("objectType", "query"))),
+                new LlmToolDefinition("traverseLinks",
+                        "Traverse relationships from a specific object to find linked objects.",
+                        Map.of("type", "object",
+                                "properties", Map.of(
+                                        "objectId", Map.of("type", "string", "description", "UUID of the source object"),
+                                        "linkType", Map.of("type", "string", "description", "API name of the link type to traverse"),
+                                        "depth", Map.of("type", "integer", "description", "How many levels deep to traverse (default 1)")
+                                ), "required", List.of("objectId", "linkType"))),
+                new LlmToolDefinition("aggregateObjects",
+                        "Compute aggregations (COUNT, SUM, AVG) on objects of a given type.",
+                        Map.of("type", "object",
+                                "properties", Map.of(
+                                        "objectType", Map.of("type", "string", "description", "The API name of the object type"),
+                                        "operation", Map.of("type", "string", "enum", List.of("COUNT", "SUM", "AVG"), "description", "Aggregation operation"),
+                                        "property", Map.of("type", "string", "description", "Property name for SUM/AVG (ignored for COUNT)")
+                                ), "required", List.of("objectType", "operation")))
+        );
+    }
+
+    /**
+     * Execute a tool by name with the given arguments. Returns the result as a map.
+     */
+    public Map<String, Object> executeTool(String toolName, Map<String, Object> args) {
+        return switch (toolName) {
+            case "getOntologySchema" -> getOntologySchema();
+            case "searchObjects" -> searchObjects(
+                    (String) args.get("objectType"),
+                    (String) args.get("query"),
+                    args.containsKey("limit") ? ((Number) args.get("limit")).intValue() : 10);
+            case "traverseLinks" -> traverseLinks(
+                    (String) args.get("objectId"),
+                    (String) args.get("linkType"),
+                    args.containsKey("depth") ? ((Number) args.get("depth")).intValue() : 1);
+            case "aggregateObjects" -> aggregateObjects(
+                    (String) args.get("objectType"),
+                    (String) args.get("operation"),
+                    args.containsKey("property") ? (String) args.get("property") : "id");
+            default -> Map.of("error", "Unknown tool: " + toolName);
+        };
+    }
 
     public Map<String, Object> getOntologySchema() {
         var types = objectTypeRepository.findByIsActiveTrue();
