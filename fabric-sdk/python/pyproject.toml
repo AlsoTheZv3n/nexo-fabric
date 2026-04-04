@@ -1,0 +1,11 @@
+[project]
+name = "nexo-fabric"
+version = "0.1.0"
+description = "NEXO Fabric Python SDK"
+requires-python = ">=3.9"
+dependencies = ["httpx>=0.25"]
+license = {text = "MIT"}
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

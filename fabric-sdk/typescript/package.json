@@ -1,0 +1,15 @@
+{
+  "name": "@nexoai/fabric",
+  "version": "0.1.0",
+  "description": "NEXO Fabric TypeScript SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo ok"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}

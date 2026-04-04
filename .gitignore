@@ -1,0 +1,69 @@
+# ============================================
+# NEXO Fabric - .gitignore
+# ============================================
+
+# ---------- Internal ----------
+todo/
+*.zip
+
+# ---------- Environment & Secrets ----------
+.env
+.env.local
+.env.production
+.env.development
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+credentials.json
+secrets.yml
+
+# ---------- Java / Maven ----------
+**/target/
+*.class
+*.jar
+*.war
+*.log
+hs_err_pid*
+
+# ---------- Node ----------
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+*.local
+
+# ---------- Python ----------
+**/__pycache__/
+*.pyc
+*.egg-info/
+.eggs/
+
+# ---------- IDE ----------
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+
+# ---------- ML Cache ----------
+.djl.ai/
+djl-cache/
+
+# ---------- Claude ----------
+.claude/
