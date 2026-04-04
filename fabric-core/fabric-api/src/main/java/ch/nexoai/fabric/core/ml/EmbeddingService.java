@@ -24,7 +24,7 @@ public class EmbeddingService {
             tokenizer = HuggingFaceTokenizer.newInstance(MODEL_NAME);
             modelAvailable = true;
             log.info("Tokenizer loaded successfully");
-        } catch (Exception e) {
+        } catch (Exception | UnsatisfiedLinkError e) {
             log.warn("Could not load ML model: {}. Semantic search will use fallback.", e.getMessage());
             modelAvailable = false;
         }

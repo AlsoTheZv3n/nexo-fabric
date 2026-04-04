@@ -10,7 +10,7 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nexo"]
       interval: 10s
@@ -19,7 +19,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ../fabric-core
       dockerfile: Dockerfile
     container_name: nexo-backend
     ports:
@@ -31,9 +31,12 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-changeme}
       REDIS_HOST: redis
+      SERVER_PORT: 8081
       CDC_ENABLED: ${CDC_ENABLED:-false}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   n8n:
