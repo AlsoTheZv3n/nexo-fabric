@@ -10,7 +10,8 @@ import { GraphView } from '@/pages/GraphView'
 import { ConnectorManager } from '@/pages/ConnectorManager'
 import { ActionCenter } from '@/pages/ActionCenter'
 import { AiChat } from '@/pages/AiChat'
-import { KnowledgeBase } from '@/pages/KnowledgeBase'
+import { ResolutionCenter } from '@/pages/ResolutionCenter'
+import { BillingPage } from '@/pages/BillingPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { SupportPage } from '@/pages/SupportPage'
 
@@ -28,7 +29,8 @@ export default function App() {
               <Route path="/connectors" element={<ConnectorManager />} />
               <Route path="/actions" element={<ActionCenter />} />
               <Route path="/chat" element={<AiChat />} />
-              <Route path="/knowledge" element={<KnowledgeBase />} />
+              <Route path="/resolution" element={<ResolutionCenter />} />
+              <Route path="/billing" element={<BillingPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/support" element={<SupportPage />} />
             </Routes>
