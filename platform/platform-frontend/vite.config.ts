@@ -11,8 +11,8 @@ export default defineConfig({
   server: {
     port: 3005,
     proxy: {
-      '/graphql': 'http://localhost:8081',
-      '/api': 'http://localhost:8081'
+      '/graphql': 'http://localhost:8082',
+      '/api': 'http://localhost:8082'
     }
   }
 })
