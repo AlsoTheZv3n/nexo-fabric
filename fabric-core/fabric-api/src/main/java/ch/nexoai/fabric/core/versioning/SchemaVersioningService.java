@@ -139,9 +139,7 @@ public class SchemaVersioningService {
         var migrations = migrationRepository.findByObjectTypeIdAndFromVersionAndToVersion(
                 objectTypeId, fromVersion, toVersion);
 
-        var objects = objectRepository.findAll().stream()
-                .filter(o -> o.getObjectTypeId().equals(objectTypeId))
-                .toList();
+        var objects = objectRepository.findAllByObjectTypeId(objectTypeId);
 
         int batchSize = 100;
         java.util.concurrent.atomic.AtomicInteger migrated = new java.util.concurrent.atomic.AtomicInteger(0);

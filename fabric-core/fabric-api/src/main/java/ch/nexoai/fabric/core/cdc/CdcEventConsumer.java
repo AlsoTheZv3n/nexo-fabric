@@ -81,48 +81,55 @@ public class CdcEventConsumer {
                 ? java.util.Optional.<ch.nexoai.fabric.adapters.out.persistence.entity.DataSourceDefinitionEntity>empty()
                 : dataSourceRepository.findBySourceTable(sourceTable);
 
-        if (dataSourceOpt.isPresent()) {
-            var dataSource = dataSourceOpt.get();
-            String externalId = payload.has("id") ? payload.get("id").asText() : null;
-
-            if (externalId != null && dataSource.getObjectTypeId() != null) {
-                if ("d".equalsIgnoreCase(operation)) {
-                    // Delete
-                    objectRepository.findByExternalIdAndDataSourceId(externalId, dataSource.getId())
-                            .ifPresent(obj -> {
-                                objectRepository.delete(obj);
-                                log.info("CDC deleted object externalId={}", externalId);
-                            });
-                } else {
-                    // Upsert (create or update)
-                    var existing = objectRepository.findByExternalIdAndDataSourceId(externalId, dataSource.getId());
-                    if (existing.isPresent()) {
-                        var entity = existing.get();
-                        entity.setProperties(payload.toString());
-                        entity.setUpdatedAt(Instant.now());
-                        objectRepository.save(entity);
-                        log.info("CDC updated object externalId={}", externalId);
-                    } else {
-                        var entity = OntologyObjectEntity.builder()
-                                .objectTypeId(dataSource.getObjectTypeId())
-                                .externalId(externalId)
-                                .dataSourceId(dataSource.getId())
-                                .properties(payload.toString())
-                                .createdAt(Instant.now())
-                                .updatedAt(Instant.now())
-                                .build();
-                        objectRepository.save(entity);
-                        log.info("CDC created object externalId={}", externalId);
-                    }
-                }
-            }
+        if (dataSourceOpt.isEmpty()) {
+            log.debug("CDC: No connector configured for table '{}' — skipping upsert", sourceTable);
+            wsPublisher.broadcastChange(ObjectChangeEvent.builder()
+                    .operation(operation.toUpperCase()).timestamp(Instant.now()).build());
+            return;
         }
 
-        // Publish to WebSocket for live frontend updates
-        wsPublisher.broadcastChange(ObjectChangeEvent.builder()
-                .operation(operation.toUpperCase())
-                .timestamp(Instant.now())
-                .build());
+        var dataSource = dataSourceOpt.get();
+        String externalId = payload.has("id") ? payload.get("id").asText() : null;
+
+        if (externalId == null || dataSource.getObjectTypeId() == null) {
+            log.warn("CDC: Missing externalId or objectTypeId for table '{}'", sourceTable);
+            return;
+        }
+
+        if ("d".equalsIgnoreCase(operation)) {
+            // Delete
+            objectRepository.findByExternalIdAndDataSourceId(externalId, dataSource.getId())
+                    .ifPresent(obj -> {
+                        objectRepository.delete(obj);
+                        log.info("CDC deleted object externalId={} from '{}'", externalId, sourceTable);
+                        wsPublisher.broadcastChange(ObjectChangeEvent.deleted(obj.getId(), sourceTable));
+                    });
+        } else {
+            // Upsert (create or update)
+            var existing = objectRepository.findByExternalIdAndDataSourceId(externalId, dataSource.getId());
+            if (existing.isPresent()) {
+                var entity = existing.get();
+                // Conflict resolution: merge incoming with existing
+                JsonNode resolved = conflictResolution.resolve(
+                        objectMapper.readTree(entity.getProperties()), payload,
+                        ConflictResolutionService.Strategy.LAST_WRITE_WINS);
+                entity.setProperties(resolved.toString());
+                entity.setUpdatedAt(Instant.now());
+                objectRepository.save(entity);
+                log.info("CDC updated object externalId={} from '{}'", externalId, sourceTable);
+                wsPublisher.broadcastChange(ObjectChangeEvent.updated(entity.getId(), sourceTable, resolved));
+            } else {
+                OntologyObjectEntity entity = OntologyObjectEntity.builder()
+                        .objectTypeId(dataSource.getObjectTypeId())
+                        .externalId(externalId)
+                        .dataSourceId(dataSource.getId())
+                        .properties(payload.toString())
+                        .build();
+                entity = objectRepository.save(entity);
+                log.info("CDC created object externalId={} from '{}'", externalId, sourceTable);
+                wsPublisher.broadcastChange(ObjectChangeEvent.upserted(entity.getId(), sourceTable, payload));
+            }
+        }
     }
 
     private void moveToDeadLetterQueue(MapRecord<String, Object, Object> record, Exception error) {

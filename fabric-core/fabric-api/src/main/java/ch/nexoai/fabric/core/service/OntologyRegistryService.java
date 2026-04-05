@@ -13,8 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -68,24 +71,18 @@ public class OntologyRegistryService implements
     public ObjectType updateObjectType(UUID id, UpdateObjectTypeCommand command) {
         ObjectType objectType = findObjectTypeOrThrow(id);
 
-        // Fix 07: Create a schema version snapshot before applying changes
+        // Schema version snapshot before applying changes
         try {
-            ObjectNode schemaSnapshot = objectMapper.createObjectNode();
-            schemaSnapshot.put("apiName", objectType.getApiName());
-            schemaSnapshot.put("displayName", objectType.getDisplayName());
-            schemaSnapshot.put("description", objectType.getDescription() != null ? objectType.getDescription() : "");
-            schemaSnapshot.set("properties", objectMapper.valueToTree(
-                    objectType.getProperties().stream().map(p -> {
-                        ObjectNode pn = objectMapper.createObjectNode();
-                        pn.put("apiName", p.getApiName());
-                        pn.put("dataType", p.getDataType().name());
-                        pn.put("isRequired", p.isRequired());
-                        return pn;
-                    }).toList()));
-
-            String changeSummary = "Updated: displayName=%s, description=%s".formatted(
-                    command.displayName(), command.description());
-            schemaVersioningService.createVersion(id, schemaSnapshot, changeSummary, false,
+            ObjectNode snapshot = buildSchemaSnapshot(objectType);
+            List<String> changes = new ArrayList<>();
+            if (!Objects.equals(objectType.getDisplayName(), command.displayName())) {
+                changes.add("displayName: '" + objectType.getDisplayName() + "' → '" + command.displayName() + "'");
+            }
+            if (!Objects.equals(objectType.getDescription(), command.description())) {
+                changes.add("description updated");
+            }
+            String summary = changes.isEmpty() ? "Updated" : String.join(", ", changes);
+            schemaVersioningService.createVersion(id, snapshot, summary, false,
                     TenantContext.getCurrentUser());
         } catch (Exception e) {
             log.warn("Could not create schema version for ObjectType {}: {}", id, e.getMessage());
@@ -124,6 +121,16 @@ public class OntologyRegistryService implements
     @Override
     public PropertyType addProperty(UUID objectTypeId, RegisterObjectTypeUseCase.PropertyTypeCommand command) {
         ObjectType objectType = findObjectTypeOrThrow(objectTypeId);
+
+        try {
+            ObjectNode snapshot = buildSchemaSnapshot(objectType);
+            schemaVersioningService.createVersion(objectTypeId, snapshot,
+                    "Added property: " + command.apiName() + " (" + command.dataType() + ")",
+                    false, TenantContext.getCurrentUser());
+        } catch (Exception e) {
+            log.warn("Could not create schema version for addProperty on {}: {}", objectTypeId, e.getMessage());
+        }
+
         PropertyType property = mapPropertyCommand(command);
         objectType.addProperty(property);
         return propertyTypeRepository.save(property, objectTypeId);
@@ -131,7 +138,21 @@ public class OntologyRegistryService implements
 
     @Override
     public void removeProperty(UUID objectTypeId, UUID propertyId) {
-        findObjectTypeOrThrow(objectTypeId);
+        ObjectType objectType = findObjectTypeOrThrow(objectTypeId);
+        PropertyType property = objectType.getProperties().stream()
+                .filter(p -> p.getId() != null && p.getId().equals(propertyId))
+                .findFirst().orElse(null);
+
+        try {
+            ObjectNode snapshot = buildSchemaSnapshot(objectType);
+            String propName = property != null ? property.getApiName() : propertyId.toString();
+            schemaVersioningService.createVersion(objectTypeId, snapshot,
+                    "BREAKING: Removed property: " + propName,
+                    true, TenantContext.getCurrentUser());
+        } catch (Exception e) {
+            log.warn("Could not create schema version for removeProperty on {}: {}", objectTypeId, e.getMessage());
+        }
+
         propertyTypeRepository.deleteById(propertyId);
     }
 
@@ -169,6 +190,22 @@ public class OntologyRegistryService implements
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
+
+    private ObjectNode buildSchemaSnapshot(ObjectType objectType) {
+        ObjectNode snapshot = objectMapper.createObjectNode();
+        snapshot.put("apiName", objectType.getApiName());
+        snapshot.put("displayName", objectType.getDisplayName());
+        snapshot.put("description", objectType.getDescription() != null ? objectType.getDescription() : "");
+        snapshot.set("properties", objectMapper.valueToTree(
+                objectType.getProperties().stream().map(p -> {
+                    ObjectNode pn = objectMapper.createObjectNode();
+                    pn.put("apiName", p.getApiName());
+                    pn.put("dataType", p.getDataType().name());
+                    pn.put("isRequired", p.isRequired());
+                    return pn;
+                }).toList()));
+        return snapshot;
+    }
 
     private ObjectType findObjectTypeOrThrow(UUID id) {
         return objectTypeRepository.findById(id)
