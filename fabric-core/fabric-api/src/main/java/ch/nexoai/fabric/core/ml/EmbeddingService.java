@@ -119,7 +119,7 @@ public class EmbeddingService {
     public boolean isAvailable()  { return modelAvailable; }
     public String  getModelName() { return MODEL_NAME; }
 
-    public float[] embed(String text) {
+    public synchronized float[] embed(String text) {
         if (text == null || text.isBlank()) {
             return new float[EMBEDDING_DIMENSION];
         }

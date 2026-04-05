@@ -11,7 +11,10 @@ import ch.nexoai.fabric.adapters.out.persistence.repository.JpaObjectTypeReposit
 import ch.nexoai.fabric.adapters.out.persistence.repository.JpaLinkTypeRepository;
 import ch.nexoai.fabric.core.domain.object.OntologyObject;
 import ch.nexoai.fabric.core.exception.OntologyException;
+import ch.nexoai.fabric.core.ml.EmbeddingPipeline;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ public class OntologyObjectService {
     private final JpaObjectLinkRepository linkRepository;
     private final JpaLinkTypeRepository linkTypeRepository;
     private final ObjectMapper objectMapper;
+    private final EmbeddingPipeline embeddingPipeline;
 
     public OntologyObject createObject(String objectTypeName, JsonNode properties) {
         var objectType = objectTypeRepository.findByIsActiveTrue().stream()
@@ -44,6 +48,16 @@ public class OntologyObjectService {
                 .updatedAt(now)
                 .build();
         var saved = objectRepository.save(entity);
+
+        // Generate embedding async AFTER transaction commits (so the object is visible)
+        UUID savedId = saved.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                embeddingPipeline.generateEmbedding(savedId);
+            }
+        });
+
         return toDomain(saved, objectTypeName);
     }
 

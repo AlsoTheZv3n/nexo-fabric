@@ -67,16 +67,20 @@ public class EmbeddingPipeline {
 
     /**
      * Generate embedding for a single object.
+     * Called synchronously from afterCommit callback to avoid DJL thread-safety issues.
      */
-    @Async
     public void generateEmbedding(UUID objectId) {
         try {
             var entity = objectRepository.findById(objectId).orElse(null);
-            if (entity == null) return;
+            if (entity == null) {
+                log.warn("Cannot embed object {}: not found", objectId);
+                return;
+            }
 
             var properties = objectMapper.readTree(entity.getProperties());
             float[] embedding = embeddingService.embedObject(properties);
             updateEmbedding(objectId, embedding);
+            log.info("Embedded object {} ({} dims)", objectId, embedding.length);
         } catch (Exception e) {
             log.warn("Failed to embed object {}: {}", objectId, e.getMessage());
         }
