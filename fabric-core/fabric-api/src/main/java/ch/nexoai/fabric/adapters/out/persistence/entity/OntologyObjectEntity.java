@@ -46,6 +46,9 @@ public class OntologyObjectEntity {
     @Column(name = "embedding", columnDefinition = "vector")
     private float[] embedding;
 
+    @Column(name = "current_state", length = 100)
+    private String currentState;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
