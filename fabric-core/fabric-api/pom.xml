@@ -101,6 +101,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Mozilla Rhino — JavaScript engine for Functions/Compute Layer -->
+        <dependency>
+            <groupId>org.mozilla</groupId>
+            <artifactId>rhino</artifactId>
+            <version>1.7.15</version>
+        </dependency>
+
         <!-- JWT (JJWT) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

@@ -3,8 +3,12 @@ package ch.nexoai.fabric.core.agent;
 import com.fasterxml.jackson.databind.JsonNode;
 import ch.nexoai.fabric.adapters.out.persistence.repository.JpaObjectTypeRepository;
 import ch.nexoai.fabric.core.agent.llm.LlmToolDefinition;
+import ch.nexoai.fabric.core.functions.FunctionExecutionResult;
+import ch.nexoai.fabric.core.functions.FunctionService;
 import ch.nexoai.fabric.core.ml.SemanticSearchService;
 import ch.nexoai.fabric.core.service.object.OntologyObjectService;
+import ch.nexoai.fabric.core.tenant.TenantContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -23,6 +27,8 @@ public class OntologyAgentTools {
     private final OntologyObjectService objectService;
     private final SemanticSearchService semanticSearchService;
     private final JpaObjectTypeRepository objectTypeRepository;
+    private final FunctionService functionService;
+    private final ObjectMapper objectMapper;
 
     /**
      * Returns tool definitions for LLM function-calling.
@@ -55,7 +61,14 @@ public class OntologyAgentTools {
                                         "objectType", Map.of("type", "string", "description", "The API name of the object type"),
                                         "operation", Map.of("type", "string", "enum", List.of("COUNT", "SUM", "AVG"), "description", "Aggregation operation"),
                                         "property", Map.of("type", "string", "description", "Property name for SUM/AVG (ignored for COUNT)")
-                                ), "required", List.of("objectType", "operation")))
+                                ), "required", List.of("objectType", "operation"))),
+                new LlmToolDefinition("callFunction",
+                        "Execute a user-defined Function on an object. Useful for calculations like risk scores, formatting, validations.",
+                        Map.of("type", "object",
+                                "properties", Map.of(
+                                        "functionApiName", Map.of("type", "string", "description", "API name of the function to call"),
+                                        "objectId", Map.of("type", "string", "description", "Optional UUID of the object to use as input")
+                                ), "required", List.of("functionApiName")))
         );
     }
 
@@ -73,12 +86,37 @@ public class OntologyAgentTools {
                     (String) args.get("objectId"),
                     (String) args.get("linkType"),
                     args.containsKey("depth") ? ((Number) args.get("depth")).intValue() : 1);
+            case "callFunction" -> callFunction(
+                    (String) args.get("functionApiName"),
+                    args.containsKey("objectId") ? (String) args.get("objectId") : null);
             case "aggregateObjects" -> aggregateObjects(
                     (String) args.get("objectType"),
                     (String) args.get("operation"),
                     args.containsKey("property") ? (String) args.get("property") : "id");
             default -> Map.of("error", "Unknown tool: " + toolName);
         };
+    }
+
+    public Map<String, Object> callFunction(String functionApiName, String objectIdStr) {
+        try {
+            FunctionExecutionResult result;
+            if (objectIdStr != null && !objectIdStr.isBlank()) {
+                result = functionService.executeForObject(functionApiName,
+                        UUID.fromString(objectIdStr), TenantContext.getTenantId());
+            } else {
+                result = functionService.execute(functionApiName,
+                        objectMapper.createObjectNode(), TenantContext.getTenantId());
+            }
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", result.isSuccess());
+            response.put("output", result.getOutput());
+            response.put("durationMs", result.getDurationMs());
+            if (result.getError() != null) response.put("error", result.getError());
+            return response;
+        } catch (Exception e) {
+            return Map.of("success", false, "error", e.getMessage());
+        }
     }
 
     public Map<String, Object> getOntologySchema() {
