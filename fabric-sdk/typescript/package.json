@@ -1,15 +1,20 @@
 {
   "name": "@nexoai/fabric",
-  "version": "0.1.0",
-  "description": "NEXO Fabric TypeScript SDK",
+  "version": "0.2.0",
+  "description": "NEXO Fabric TypeScript SDK with code generation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "nexo-fabric": "./dist/cli/generate.js"
+  },
   "scripts": {
     "build": "tsc",
+    "generate": "node dist/cli/generate.js",
     "test": "echo ok"
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^6.0.2"
   }
 }

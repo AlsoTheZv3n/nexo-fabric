@@ -1,13 +1,31 @@
 import { FabricConfig, FabricObject, ObjectType, SearchResult, AgentResponse, ObjectPage } from './types'
+import { createOntology } from './ontology'
 
 export class FabricClient {
   private baseUrl: string
   private headers: Record<string, string>
 
+  /**
+   * Typed ontology accessor (Proxy-based at runtime).
+   * After running `nexo-fabric generate`, full TypeScript types are
+   * provided via the generated `nexo-fabric.d.ts` declaration.
+   *
+   *   await client.ontology.Customer.search({ revenue: { gt: 100000 } })
+   */
+  readonly ontology: ReturnType<typeof createOntology>
+
   constructor(config: FabricConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, '')
     this.headers = { 'Content-Type': 'application/json' }
-    if (config.apiKey) this.headers['Authorization'] = `Bearer ${config.apiKey}`
+    if (config.apiKey) {
+      // Detect API key vs JWT
+      if (config.apiKey.startsWith('nxo_')) {
+        this.headers['X-API-Key'] = config.apiKey
+      } else {
+        this.headers['Authorization'] = `Bearer ${config.apiKey}`
+      }
+    }
+    this.ontology = createOntology(this)
   }
 
   // Schema

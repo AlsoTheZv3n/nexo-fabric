@@ -4,9 +4,12 @@
     "module": "commonjs",
     "declaration": true,
     "outDir": "dist",
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src/**/*"]
 }
