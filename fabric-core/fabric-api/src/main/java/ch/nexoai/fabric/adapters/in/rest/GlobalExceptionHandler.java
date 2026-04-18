@@ -3,6 +3,9 @@ package ch.nexoai.fabric.adapters.in.rest;
 import ch.nexoai.fabric.core.exception.DuplicateApiNameException;
 import ch.nexoai.fabric.core.exception.ObjectTypeNotFoundException;
 import ch.nexoai.fabric.core.exception.OntologyException;
+import ch.nexoai.fabric.core.functions.FunctionNotFoundException;
+import ch.nexoai.fabric.core.functions.FunctionSyntaxException;
+import ch.nexoai.fabric.core.lifecycle.InvalidTransitionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -27,6 +30,26 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(OntologyException.class)
     public ResponseEntity<Map<String, Object>> handleOntologyException(OntologyException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage(), 400));
+    }
+
+    @ExceptionHandler(InvalidTransitionException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidTransition(InvalidTransitionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage(), 400));
+    }
+
+    @ExceptionHandler(FunctionSyntaxException.class)
+    public ResponseEntity<Map<String, Object>> handleFunctionSyntax(FunctionSyntaxException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage(), 400));
+    }
+
+    @ExceptionHandler(FunctionNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleFunctionNotFound(FunctionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage(), 404));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(ex.getMessage(), 400));
     }
 
