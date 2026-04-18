@@ -6,6 +6,9 @@
 todo/
 *.zip
 
+# ---------- Local Sandbox / Demo (not committed) ----------
+sandbox/
+
 # ---------- Environment & Secrets ----------
 .env
 .env.local
