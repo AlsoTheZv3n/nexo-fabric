@@ -198,15 +198,27 @@ createObject(objectType: "Customer", properties: {...}) { id }
 agentChat(message: "How many customers?") { message toolCalls { tool } }
 ```
 
+## Testing
+
+Three levels of verification, all reproducible against a fresh `docker compose up`:
+
+- **Unit tests** — `cd fabric-core && mvn test` → 19 tests, 0 failures, BUILD SUCCESS
+- **End-to-end** — `cd tests/e2e && ./seed.sh && ./test-all.sh` → 59 / 59 passing
+  across auth, ontology, schema versioning, semantic search, lifecycle, functions,
+  workflows, AI agent, and observability
+- **AI agent** — `cd tests/e2e && ./test-ai.sh` — works with keyword fallback
+  or any configured LLM (Anthropic / OpenAI / Ollama). See
+  [`docs/ai-local-llm.md`](docs/ai-local-llm.md) for setting up a local GPU model
+
+See [`docs/testing.md`](docs/testing.md) for coverage matrix, sample outputs,
+performance benchmarks, and the list of bugs these tests caught during
+development.
+
 ## Development
 
 ```bash
 # Build
 cd fabric-core && mvn compile
-
-# Test
-cd fabric-core && mvn test
-# 19 tests, 0 failures
 
 # Rebuild Docker backend
 docker compose -f docker/docker-compose.dev.yml --env-file .env up -d --build backend

@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Müller AG",
+    "email": "info@mueller-ag.ch",
+    "revenue": 520000,
+    "region": "Zürich",
+    "industry": "Manufacturing",
+    "employeeCount": 45,
+    "status": "active",
+    "overdueInvoiceCount": 0,
+    "notes": "Langjähriger Kunde, SAP-Integration geplant"
+  },
+  {
+    "name": "Becker GmbH",
+    "email": "kontakt@becker-gmbh.ch",
+    "revenue": 85000,
+    "region": "Bern",
+    "industry": "Startup",
+    "employeeCount": 12,
+    "status": "qualified",
+    "overdueInvoiceCount": 0,
+    "notes": "Frisch qualifiziert, erwartet Angebot"
+  },
+  {
+    "name": "Huber & Co",
+    "email": "huber@huber-co.ch",
+    "revenue": 220000,
+    "region": "Basel",
+    "industry": "Consulting",
+    "employeeCount": 28,
+    "status": "active",
+    "overdueInvoiceCount": 2,
+    "notes": "2 Rechnungen überfällig, Zahlungserinnerung gesendet"
+  },
+  {
+    "name": "Schmidt IT Services",
+    "email": "office@schmidt-it.ch",
+    "revenue": 180000,
+    "region": "Genf",
+    "industry": "IT Services",
+    "employeeCount": 19,
+    "status": "active",
+    "overdueInvoiceCount": 0,
+    "notes": "Managed-Services-Kunde seit 2024"
+  },
+  {
+    "name": "Keller Solutions",
+    "email": "info@keller-solutions.ch",
+    "revenue": 32000,
+    "region": "St. Gallen",
+    "industry": "Retail",
+    "employeeCount": 8,
+    "status": "active",
+    "overdueInvoiceCount": 3,
+    "notes": "Risikokunde — Umsatz rückläufig, mehrere Mahnungen"
+  }
+]

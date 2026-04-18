@@ -1,0 +1,14 @@
+[
+  { "number": "2026-001", "customer": "Müller AG", "amount": 15000, "status": "paid", "dueInDays": -30 },
+  { "number": "2026-002", "customer": "Müller AG", "amount": 22000, "status": "paid", "dueInDays": -15 },
+  { "number": "2026-003", "customer": "Müller AG", "amount": 18500, "status": "open", "dueInDays": 20 },
+  { "number": "2026-004", "customer": "Becker GmbH", "amount": 5500, "status": "open", "dueInDays": 10 },
+  { "number": "2026-005", "customer": "Huber & Co", "amount": 12000, "status": "overdue", "dueInDays": -45 },
+  { "number": "2026-006", "customer": "Huber & Co", "amount": 8400, "status": "overdue", "dueInDays": -15 },
+  { "number": "2026-007", "customer": "Huber & Co", "amount": 14000, "status": "paid", "dueInDays": -60 },
+  { "number": "2026-008", "customer": "Schmidt IT Services", "amount": 9500, "status": "paid", "dueInDays": -5 },
+  { "number": "2026-009", "customer": "Schmidt IT Services", "amount": 11000, "status": "open", "dueInDays": 25 },
+  { "number": "2026-010", "customer": "Keller Solutions", "amount": 3200, "status": "overdue", "dueInDays": -90 },
+  { "number": "2026-011", "customer": "Keller Solutions", "amount": 4100, "status": "overdue", "dueInDays": -60 },
+  { "number": "2026-012", "customer": "Keller Solutions", "amount": 2800, "status": "overdue", "dueInDays": -30 }
+]

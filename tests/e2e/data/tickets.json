@@ -1,0 +1,10 @@
+[
+  { "title": "Server Ausfall Produktion", "customer": "Müller AG", "priority": "high", "status": "in_progress", "ageDays": 2 },
+  { "title": "SSL Zertifikat erneuern", "customer": "Müller AG", "priority": "medium", "status": "open", "ageDays": 5 },
+  { "title": "Neues Laptop einrichten", "customer": "Becker GmbH", "priority": "low", "status": "open", "ageDays": 1 },
+  { "title": "Backup-Strategie erstellen", "customer": "Huber & Co", "priority": "high", "status": "in_progress", "ageDays": 4 },
+  { "title": "Email-Migration Office 365", "customer": "Huber & Co", "priority": "medium", "status": "resolved", "ageDays": 15 },
+  { "title": "VPN Zugang einrichten", "customer": "Schmidt IT Services", "priority": "medium", "status": "resolved", "ageDays": 7 },
+  { "title": "Kassensystem-Fehler", "customer": "Keller Solutions", "priority": "high", "status": "open", "ageDays": 12 },
+  { "title": "WiFi-Probleme im Lager", "customer": "Keller Solutions", "priority": "low", "status": "open", "ageDays": 20 }
+]
